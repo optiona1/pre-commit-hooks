@@ -107,8 +107,8 @@ The following arguments are available:
 #### `detect-private-key`
 Checks for the existence of private keys.
 
-#### `double-quote-string-fixer`
-This hook replaces double quoted strings with single quoted strings.
+#### `quote-string-fixer`
+This hook replaces existing quoted strings with specified(double/single) quoted strings.
 
 #### `end-of-file-fixer`
 Makes sure files end in a newline and only a newline.

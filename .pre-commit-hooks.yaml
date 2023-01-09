@@ -119,10 +119,10 @@
     entry: detect-private-key
     language: python
     types: [text]
--   id: double-quote-string-fixer
-    name: fix double quoted strings
+-   id: quote-string-fixer
+    name: fix quoted strings
     description: replaces double quoted strings with single quoted strings.
-    entry: double-quote-string-fixer
+    entry: quote-string-fixer
     language: python
     types: [python]
 -   id: end-of-file-fixer

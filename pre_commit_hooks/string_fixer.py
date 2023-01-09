@@ -6,20 +6,21 @@ import re
 import tokenize
 from typing import Sequence
 
-START_QUOTE_RE = re.compile('^[a-zA-Z]*"')
 
-
-def handle_match(token_text: str) -> str:
+def handle_match(token_text: str, is_double_quote: bool, start_quote_re: re.Pattern) -> str:
     if '"""' in token_text or "'''" in token_text:
         return token_text
 
-    match = START_QUOTE_RE.match(token_text)
+    match = start_quote_re.match(token_text)
     if match is not None:
         meat = token_text[match.end():-1]
         if '"' in meat or "'" in meat:
             return token_text
         else:
-            return match.group().replace('"', "'") + meat + "'"
+            if is_double_quote:
+                return match.group().replace("'", '"') + meat + '"'
+            else:
+                return match.group().replace('"', "'") + meat + "'"
     else:
         return token_text
 
@@ -32,7 +33,7 @@ def get_line_offsets_by_line_no(src: str) -> list[int]:
     return offsets
 
 
-def fix_strings(filename: str) -> int:
+def fix_strings(filename: str, is_double_quote: bool) -> int:
     with open(filename, encoding='UTF-8', newline='') as f:
         contents = f.read()
     line_offsets = get_line_offsets_by_line_no(contents)
@@ -43,9 +44,15 @@ def fix_strings(filename: str) -> int:
     # Iterate in reverse so the offsets are always correct
     tokens_l = list(tokenize.generate_tokens(io.StringIO(contents).readline))
     tokens = reversed(tokens_l)
+
+    if is_double_quote:
+        start_quote_re = re.compile("^[a-zA-Z]*'")
+    else:
+        start_quote_re = re.compile('^[a-zA-Z]*"')
+
     for token_type, token_text, (srow, scol), (erow, ecol), _ in tokens:
         if token_type == tokenize.STRING:
-            new_text = handle_match(token_text)
+            new_text = handle_match(token_text, is_double_quote, start_quote_re)
             splitcontents[
                 line_offsets[srow] + scol:
                 line_offsets[erow] + ecol
@@ -63,12 +70,16 @@ def fix_strings(filename: str) -> int:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('filenames', nargs='*', help='Filenames to fix')
+    parser.add_argument(
+        '--double-quote', action='store_true',
+        help='Replaces single quoted strings with double quoted strings.',
+    )
     args = parser.parse_args(argv)
 
     retv = 0
 
     for filename in args.filenames:
-        return_value = fix_strings(filename)
+        return_value = fix_strings(filename, args.double_quote)
         if return_value != 0:
             print(f'Fixing strings in {filename}')
         retv |= return_value
